@@ -1,137 +1,135 @@
-import re
 import operator
+import re
 
-# Словарь для чисел от 0 до 99
+# Dictionary for numbers from 0 to 99
 NUMBER_WORDS = {
-    "ноль": 0,
-    "один": 1,
-    "два": 2,
-    "три": 3,
-    "четыре": 4,
-    "пять": 5,
-    "шесть": 6,
-    "семь": 7,
-    "восемь": 8,
-    "девять": 9,
-    "десять": 10,
-    "одиннадцать": 11,
-    "двенадцать": 12,
-    "тринадцать": 13,
-    "четырнадцать": 14,
-    "пятнадцать": 15,
-    "шестнадцать": 16,
-    "семнадцать": 17,
-    "восемнадцать": 18,
-    "девятнадцать": 19,
-    "двадцать": 20,
-    "тридцать": 30,
-    "сорок": 40,
-    "пятьдесят": 50,
-    "шестьдесят": 60,
-    "семьдесят": 70,
-    "восемьдесят": 80,
-    "девяносто": 90,
+    "zero": 0,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+    "twenty": 20,
+    "thirty": 30,
+    "forty": 40,
+    "fifty": 50,
+    "sixty": 60,
+    "seventy": 70,
+    "eighty": 80,
+    "ninety": 90,
 }
 
-# Арифметические операции
+# Arithmetic operations
 OPERATIONS = {
-    "плюс": operator.add,
-    "минус": operator.sub,
-    "умножить": operator.mul,
-    "разделить": operator.truediv,
+    "plus": operator.add,
+    "minus": operator.sub,
+    "multiply": operator.mul,
+    "divide": operator.truediv,
 }
 
-# Обратное отображение для преобразования чисел в слова
-REVERSE_WORDS = {v: k for k, v in NUMBER_WORDS.items()}
+# Reverse mapping used to convert numbers back to words
+REVERSE_WORDS = {value: word for word, value in NUMBER_WORDS.items()}
 
 
 def words_to_number(text):
-    """Преобразует русские числительные в числовое значение"""
+    """Convert English number words to a numeric value."""
 
     if not text or text.strip() == "":
-        raise ValueError("Пустое число")
+        raise ValueError("Empty number")
 
     text = text.strip().lower()
 
-    # Сначала обрабатываем простые числа
+    # Handle single-word numbers first.
     if text in NUMBER_WORDS:
         return NUMBER_WORDS[text]
 
-    # Обрабатываем составные числа типа "двадцать пять"
+    # Handle compound numbers such as "twenty five".
     words = text.split()
     total = 0
 
     for word in words:
         if word in NUMBER_WORDS:
             value = NUMBER_WORDS[word]
-            if value >= 20:  # Это слово обозначает десятки
+            if value >= 20:  # This word represents tens.
                 total += value
-            else:  # Это слово обозначает единицы
+            else:  # This word represents ones.
                 total += value
         else:
-            raise ValueError(f"Неизвестное слово: {word}")
+            raise ValueError(f"Unknown word: {word}")
 
     return total
 
 
 def number_to_words(number):
-    """Преобразует число в русские слова"""
+    """Convert a number to English words."""
 
     if number == 0:
-        return "ноль"
+        return "zero"
 
     if number < 0:
-        return "минус " + number_to_words(abs(number))
+        return "minus " + number_to_words(abs(number))
 
-    # Обрабатываем числа, которые есть в словаре
+    # Handle numbers that already exist in the dictionary.
     if number in REVERSE_WORDS:
         return REVERSE_WORDS[number]
 
-    # Обрабатываем составные числа
+    # Handle compound numbers.
     tens = (number // 10) * 10
     ones = number % 10
 
     if tens > 0 and ones > 0:
         return f"{REVERSE_WORDS[tens]} {REVERSE_WORDS[ones]}"
-
     elif tens > 0:
         return REVERSE_WORDS[tens]
-
     else:
         return REVERSE_WORDS[ones]
 
 
 def parse_simple_expression(expression):
-    """Разбирает простые выражения с двумя числами и одним оператором"""
+    """Parse simple expressions with two numbers and one operator."""
 
     expression = expression.lower().strip()
 
-    # Находим оператор
+    # Find the operator.
     found_operator = None
     operator_position = -1
 
-    for op_word in OPERATIONS:
-        if op_word in expression:
-            found_operator = op_word
-            operator_position = expression.find(op_word)
+    for operator_word in OPERATIONS:
+        if operator_word in expression:
+            found_operator = operator_word
+            operator_position = expression.find(operator_word)
             break
 
     if not found_operator:
-        raise ValueError("Оператор не найден в выражении")
+        raise ValueError("No operator found in expression")
 
-    # Разделяем по позиции оператора
+    # Split the expression around the operator position.
     left_text = expression[:operator_position].strip()
     right_text = expression[operator_position + len(found_operator):].strip()
 
-    # Для "умножить" и "разделить" удаляем слово "на" с правой стороны, если присутствует
-    if found_operator in ["умножить", "разделить"]:
-        right_text = re.sub(r"^на\s+", "", right_text)
+    # For "multiply" and "divide", remove the leading "by" if present.
+    if found_operator in ["multiply", "divide"]:
+        right_text = re.sub(r"^by\s+", "", right_text)
 
-    # Если правая часть пуста после очистки - это ошибка
+    # An empty right-hand side is an error after cleanup.
     if not right_text:
-        raise ValueError("Отсутствует второе число")
+        raise ValueError("Missing right operand")
 
-    # Преобразуем оба числа
+    # Convert both operands.
     left_num = words_to_number(left_text)
     right_num = words_to_number(right_text)
 
@@ -139,79 +137,66 @@ def parse_simple_expression(expression):
 
 
 def calc(expression):
-    """Главная функция калькулятора"""
+    """Main calculator function."""
 
     try:
-
         if not expression or expression.strip() == "":
-            return "ошибка: пустое выражение"
+            return "error: empty expression"
 
         left_num, operator_word, right_num = parse_simple_expression(expression)
         operation = OPERATIONS[operator_word]
 
-        # Проверяем деление на ноль
-        if operator_word == "разделить" and right_num == 0:
-            return "ошибка: деление на ноль"
+        # Check for division by zero.
+        if operator_word == "divide" and right_num == 0:
+            return "error: division by zero"
 
         result = operation(left_num, right_num)
 
-        # Обрабатываем числа с плавающей точкой
+        # Handle floating-point results.
         if isinstance(result, float):
-
             if result.is_integer():
                 result = int(result)
-
             else:
-                # Округляем до 2 знаков после запятой для простых случаев
+                # Round to two decimal places for simple cases.
                 result = round(result, 2)
 
         return number_to_words(result)
 
-    except ValueError as e:
-        error_msg = str(e)
-        if "Unknown word" in error_msg:
-            unknown_word = error_msg.split(": ")[1]
-
-            return f"ошибка: неизвестное слово '{unknown_word}'"
-
-        elif "No operator" in error_msg:
-
-            return "ошибка: не найден оператор (используйте плюс, минус, умножить, разделить)"
-
-        elif "Missing right operand" in error_msg:
-
-            return "ошибка: отсутствует второе число"
-
-        elif "Empty number" in error_msg:
-
-            return "ошибка: пустое число"
-
+    except ValueError as error:
+        error_message = str(error)
+        if "Unknown word" in error_message:
+            unknown_word = error_message.split(": ")[1]
+            return f"error: unknown word '{unknown_word}'"
+        elif "No operator" in error_message:
+            return "error: operator not found (use plus, minus, multiply, divide)"
+        elif "Missing right operand" in error_message:
+            return "error: missing right operand"
+        elif "Empty number" in error_message:
+            return "error: empty number"
         else:
+            return f"error: {error_message}"
 
-            return f"ошибка: {error_msg}"
-
-    except Exception as e:
-
-        return f"ошибка: неправильный формат выражения"
+    except Exception:
+        return "error: invalid expression format"
 
 
-# Тестовые примеры
+# Sample tests
 if __name__ == "__main__":
-    print("=== Базовые тесты ===")
-    print(calc("двадцать пять плюс тринадцать"))  # тридцать восемь
-    print(calc("пять плюс три"))  # восемь
-    print(calc("десять минус четыре"))  # шесть
-    print(calc("шесть умножить на семь"))  # сорок два
-    print(calc("шесть умножить семь"))  # сорок два (без "на")
+    print("=== Basic tests ===")
+    print(calc("twenty five plus thirteen"))  # thirty eight
+    print(calc("five plus three"))  # eight
+    print(calc("ten minus four"))  # six
+    print(calc("six multiply by seven"))  # forty two
+    print(calc("six multiply seven"))  # forty two (without "by")
 
-    print("\n=== Тесты деления ===")
-    print(calc("десять разделить на два"))  # пять
-    print(calc("девять разделить на три"))  # три
-    print(calc("десять разделить на ноль"))  # ошибка: деление на ноль
-    print(calc("девять разделить три"))  # три (без "на")
+    print("\n=== Division tests ===")
+    print(calc("ten divide by two"))  # five
+    print(calc("nine divide by three"))  # three
+    print(calc("ten divide by zero"))  # error: division by zero
+    print(calc("nine divide three"))  # three (without "by")
 
-    print("\n=== Тесты ошибок ===")
-    print(calc("пять плюс"))  # ошибка: отсутствует второе число
-    print(calc("разделить на пять"))  # ошибка: отсутствует первое число
-    print(calc("пять плюс неизвестное"))  # ошибка: неизвестное слово 'неизвестное'
-    print(calc(""))  # ошибка: пустое выражение
+    print("\n=== Error tests ===")
+    print(calc("five plus"))  # error: missing right operand
+    print(calc("divide by five"))  # error: empty number
+    print(calc("five plus unknown"))  # error: unknown word 'unknown'
+    print(calc(""))  # error: empty expression
